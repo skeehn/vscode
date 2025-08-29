@@ -1,0 +1,177 @@
+version: '3.8'
+
+services:
+  vscode-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    ports:
+      - "3000:3000"    # VSCode web interface
+      - "11434:11434" # Ollama API
+      - "9229:9229"   # VSCode debugger
+    volumes:
+      - ./workspace:/home/vscode/workspace
+      - vscode-extensions:/home/vscode/.vscode/extensions
+      - vscode-data:/home/vscode/.vscode/data
+      - ollama-data:/home/vscode/.ollama
+      - models-cache:/home/vscode/models
+      - hf-cache:/home/vscode/.cache/huggingface
+      - torch-cache:/home/vscode/.cache/torch
+    environment:
+      - NODE_ENV=production
+      - OLLAMA_HOST=0.0.0.0:11434
+      - HF_HOME=/home/vscode/.cache/huggingface
+      - TORCH_HOME=/home/vscode/.cache/torch
+      - VSCODE_AGENT_ENABLED=true
+      - VSCODE_AGENT_MODELS=auto
+      - VSCODE_AGENT_MEMORY=hybrid
+      - VSCODE_AGENT_APIS=all
+    depends_on:
+      - redis
+      - postgres
+      - chroma
+    networks:
+      - vscode-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - vscode-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=vscode_agent
+      - POSTGRES_USER=vscode
+      - POSTGRES_PASSWORD=vscode_agent_2024
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - vscode-network
+    restart: unless-stopped
+
+  chroma:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    networks:
+      - vscode-network
+    restart: unless-stopped
+
+  weaviate:
+    image: semitechnologies/weaviate:1.21.0
+    ports:
+      - "8080:8080"
+    environment:
+      - QUERY_DEFAULTS_LIMIT=25
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
+      - PERSISTENCE_DATA_PATH='/var/lib/weaviate'
+    volumes:
+      - weaviate-data:/var/lib/weaviate
+    networks:
+      - vscode-network
+    restart: unless-stopped
+
+  pinecone-proxy:
+    image: nginx:alpine
+    ports:
+      - "8081:80"
+    volumes:
+      - ./nginx/pinecone.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - vscode-network
+    restart: unless-stopped
+
+  api-gateway:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/vscode-agent.conf:/etc/nginx/conf.d/default.conf
+      - ./ssl:/etc/ssl/certs
+    depends_on:
+      - vscode-agent
+    networks:
+      - vscode-network
+    restart: unless-stopped
+
+  monitoring:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - vscode-network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - vscode-network
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - vscode-network
+    restart: unless-stopped
+
+volumes:
+  vscode-extensions:
+  vscode-data:
+  ollama-data:
+  models-cache:
+  hf-cache:
+  torch-cache:
+  redis-data:
+  postgres-data:
+  chroma-data:
+  weaviate-data:
+  grafana-data:
+  prometheus-data:
+
+networks:
+  vscode-network:
+    driver: bridge
