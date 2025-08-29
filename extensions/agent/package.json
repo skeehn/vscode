@@ -1,0 +1,434 @@
+{
+	"name": "vscode-agent",
+	"displayName": "VSCode AI Agent",
+	"description": "World-class AI coding agent with multi-model support, integrated into VSCode",
+	"version": "1.0.0",
+	"engines": {
+		"vscode": "^1.74.0"
+	},
+	"categories": [
+		"AI",
+		"Programming Languages",
+		"Other"
+	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "agent.startChat",
+				"title": "AI Agent: Start Chat",
+				"category": "AI Agent"
+			},
+			{
+				"command": "agent.askQuestion",
+				"title": "AI Agent: Ask Question",
+				"category": "AI Agent"
+			},
+			{
+				"command": "agent.explainCode",
+				"title": "AI Agent: Explain Code",
+				"category": "AI Agent"
+			},
+			{
+				"command": "agent.refactorCode",
+				"title": "AI Agent: Refactor Code",
+				"category": "AI Agent"
+			},
+			{
+				"command": "agent.debugCode",
+				"title": "AI Agent: Debug Code",
+				"category": "AI Agent"
+			},
+			{
+				"command": "agent.generateTests",
+				"title": "AI Agent: Generate Tests",
+				"category": "AI Agent"
+			},
+			{
+				"command": "agent.runCommand",
+				"title": "AI Agent: Run Command",
+				"category": "AI Agent"
+			},
+			{
+				"command": "agent.analyzeProject",
+				"title": "AI Agent: Analyze Project",
+				"category": "AI Agent"
+			},
+			{
+				"command": "agent.switchModel",
+				"title": "AI Agent: Switch Model",
+				"category": "AI Agent"
+			},
+			{
+				"command": "agent.showStatus",
+				"title": "AI Agent: Show Status",
+				"category": "AI Agent"
+			}
+		],
+		"menus": {
+			"editor/context": [
+				{
+					"command": "agent.explainSelection",
+					"title": "AI Agent: Explain Selection",
+					"group": "7_modification@1"
+				},
+				{
+					"command": "agent.refactorCode",
+					"title": "AI Agent: Refactor Selection",
+					"group": "7_modification@2"
+				},
+				{
+					"command": "agent.debugCode",
+					"title": "AI Agent: Debug Selection",
+					"group": "7_modification@3"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "agent.startChat",
+					"title": "AI Agent: Start Chat"
+				},
+				{
+					"command": "agent.askQuestion",
+					"title": "AI Agent: Ask Question"
+				},
+				{
+					"command": "agent.explainCode",
+					"title": "AI Agent: Explain Code"
+				},
+				{
+					"command": "agent.refactorCode",
+					"title": "AI Agent: Refactor Code"
+				},
+				{
+					"command": "agent.debugCode",
+					"title": "AI Agent: Debug Code"
+				},
+				{
+					"command": "agent.generateTests",
+					"title": "AI Agent: Generate Tests"
+				},
+				{
+					"command": "agent.runCommand",
+					"title": "AI Agent: Run Command"
+				},
+				{
+					"command": "agent.analyzeProject",
+					"title": "AI Agent: Analyze Project"
+				},
+				{
+					"command": "agent.switchModel",
+					"title": "AI Agent: Switch Model"
+				},
+				{
+					"command": "agent.showStatus",
+					"title": "AI Agent: Show Status"
+				}
+			]
+		},
+		"keybindings": [
+			{
+				"command": "agent.startChat",
+				"key": "ctrl+shift+a",
+				"mac": "cmd+shift+a",
+				"title": "AI Agent: Start Chat"
+			},
+			{
+				"command": "agent.askQuestion",
+				"key": "ctrl+shift+q",
+				"mac": "cmd+shift+q",
+				"title": "AI Agent: Ask Question"
+			},
+			{
+				"command": "agent.explainCode",
+				"key": "ctrl+shift+e",
+				"mac": "cmd+shift+e",
+				"title": "AI Agent: Explain Code"
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "AI Agent",
+			"properties": {
+				"agent.models": {
+					"type": "object",
+					"description": "AI model configuration",
+					"properties": {
+						"default": {
+							"type": "string",
+							"description": "Default AI provider",
+							"enum": ["huggingface", "ollama", "openai", "anthropic", "google", "azure", "openrouter"],
+							"default": "huggingface"
+						},
+						"providers": {
+							"type": "object",
+							"description": "Provider-specific configurations",
+							"properties": {
+								"huggingface": {
+									"type": "object",
+									"description": "Hugging Face configuration",
+									"properties": {
+										"apiKey": {
+											"type": "string",
+											"description": "Hugging Face API key"
+										},
+										"models": {
+											"type": "array",
+											"description": "Available models",
+											"items": {
+												"type": "string"
+											},
+											"default": ["codellama", "starcoder", "deepseek-coder"]
+										},
+										"defaultModel": {
+											"type": "string",
+											"description": "Default model",
+											"default": "codellama"
+										}
+									}
+								},
+								"ollama": {
+									"type": "object",
+									"description": "Ollama configuration",
+									"properties": {
+										"endpoint": {
+											"type": "string",
+											"description": "Ollama API endpoint",
+											"default": "http://localhost:11434"
+										},
+										"models": {
+											"type": "array",
+											"description": "Available models",
+											"items": {
+												"type": "string"
+											},
+											"default": ["codellama:7b", "codellama:13b"]
+										}
+									}
+								},
+								"openai": {
+									"type": "object",
+									"description": "OpenAI configuration",
+									"properties": {
+										"apiKey": {
+											"type": "string",
+											"description": "OpenAI API key"
+										},
+										"models": {
+											"type": "array",
+											"description": "Available models",
+											"items": {
+												"type": "string"
+											},
+											"default": ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]
+										},
+										"defaultModel": {
+											"type": "string",
+											"description": "Default model",
+											"default": "gpt-4o"
+										}
+									}
+								},
+								"anthropic": {
+									"type": "object",
+									"description": "Anthropic configuration",
+									"properties": {
+										"apiKey": {
+											"type": "string",
+											"description": "Anthropic API key"
+										},
+										"models": {
+											"type": "array",
+											"description": "Available models",
+											"items": {
+												"type": "string"
+											},
+											"default": ["claude-3-5-sonnet", "claude-3-haiku"]
+										},
+										"defaultModel": {
+											"type": "string",
+											"description": "Default model",
+											"default": "claude-3-5-sonnet"
+										}
+									}
+								},
+								"google": {
+									"type": "object",
+									"description": "Google Gemini configuration",
+									"properties": {
+										"apiKey": {
+											"type": "string",
+											"description": "Google API key"
+										},
+										"models": {
+											"type": "array",
+											"description": "Available models",
+											"items": {
+												"type": "string"
+											},
+											"default": ["gemini-pro", "gemini-pro-vision"]
+										},
+										"defaultModel": {
+											"type": "string",
+											"description": "Default model",
+											"default": "gemini-pro"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"agent.tools": {
+					"type": "object",
+					"description": "Tool configuration",
+					"properties": {
+						"enabled": {
+							"type": "array",
+							"description": "Enabled tools",
+							"items": {
+								"type": "string"
+							},
+							"default": ["read_file", "write_file", "run_terminal_command", "search_code"]
+						},
+						"fileops": {
+							"type": "object",
+							"description": "File operations configuration",
+							"properties": {
+								"maxFileSize": {
+									"type": "string",
+									"description": "Maximum file size to process",
+									"default": "10MB"
+								},
+								"allowedExtensions": {
+									"type": "array",
+									"description": "Allowed file extensions",
+									"items": {
+										"type": "string"
+									},
+									"default": ["*"]
+								}
+							}
+						},
+						"terminal": {
+							"type": "object",
+							"description": "Terminal configuration",
+							"properties": {
+								"timeout": {
+									"type": "number",
+									"description": "Command timeout in milliseconds",
+									"default": 30000
+								},
+								"workingDirectory": {
+									"type": "string",
+									"description": "Default working directory",
+									"default": "${workspaceFolder}"
+								}
+							}
+						}
+					}
+				},
+				"agent.memory": {
+					"type": "object",
+					"description": "Memory system configuration",
+					"properties": {
+						"path": {
+							"type": "string",
+							"description": "Memory storage path",
+							"default": ".vscode/agent-memory.json"
+						},
+						"maxSize": {
+							"type": "string",
+							"description": "Maximum memory size",
+							"default": "100MB"
+						},
+						"retentionDays": {
+							"type": "number",
+							"description": "Memory retention in days",
+							"default": 30
+						}
+					}
+				},
+				"agent.ui": {
+					"type": "object",
+					"description": "UI configuration",
+					"properties": {
+						"showStatusBar": {
+							"type": "boolean",
+							"description": "Show agent status in status bar",
+							"default": true
+						},
+						"chatPanelPosition": {
+							"type": "string",
+							"description": "Default chat panel position",
+							"enum": ["beside", "below", "active"],
+							"default": "beside"
+						},
+						"maxChatHistory": {
+							"type": "number",
+							"description": "Maximum chat history messages",
+							"default": 100
+						}
+					}
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./",
+		"pretest": "npm run compile && npm run lint",
+		"lint": "eslint src --ext ts",
+		"test": "node ./out/test/runTest.js"
+	},
+	"dependencies": {
+		"@huggingface/transformers": "^2.17.1",
+		"@huggingface/inference": "^2.6.4",
+		"ollama": "^0.3.0",
+		"autogpt-core": "^0.1.0",
+		"graphrag": "^0.1.0",
+		"@vercel/ai": "^3.0.0",
+		"langchain": "^0.1.0",
+		"chroma-js": "^2.4.2",
+		"faiss-node": "^0.5.0",
+		"pinecone-client": "^2.0.0",
+		"weaviate-ts-client": "^1.5.0",
+		"redis": "^4.6.0",
+		"mongodb": "^6.0.0",
+		"pg": "^8.11.0",
+		"axios": "^1.6.0",
+		"ws": "^8.14.0",
+		"express": "^4.18.0",
+		"socket.io": "^4.7.0",
+		"dockerode": "^4.0.0",
+		"kubernetes-client": "^9.0.0",
+		"aws-sdk": "^2.1500.0",
+		"google-cloud": "^0.56.0",
+		"azure-storage": "^2.10.7",
+		"stripe": "^14.0.0",
+		"twilio": "^4.19.0",
+		"slack-web-api": "^7.0.0",
+		"discord.js": "^14.14.0",
+		"notion-sdk-js": "^2.2.0"
+	},
+	"devDependencies": {
+		"@types/node": "18.x",
+		"@types/vscode": "^1.74.0",
+		"@typescript-eslint/eslint-plugin": "^6.0.0",
+		"@typescript-eslint/parser": "^6.0.0",
+		"eslint": "^8.0.0",
+		"typescript": "^5.0.0"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/microsoft/vscode.git"
+	},
+	"bugs": {
+		"url": "https://github.com/microsoft/vscode/issues"
+	},
+	"homepage": "https://code.visualstudio.com/"
+}
